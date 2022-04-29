@@ -9,8 +9,10 @@ import UIKit
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
+    // variable to hold current context
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
+    // creates a table view
     let tableView: UITableView = {
         let table = UITableView()
         table.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
@@ -21,25 +23,22 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         title = "ODPM"
+        // add tableview to the view
         view.addSubview(tableView)
+        // method to retrive all the saved passwords
         getAllPwds()
         tableView.delegate = self
         tableView.dataSource = self
         tableView.frame = view.bounds
         
-//        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(didTapAdd))
-        
+        // add a plus button on the top right of the screen
         navigationItem.rightBarButtonItems = [
-            UIBarButtonItem(title: "Info", style: .plain, target: self, action: #selector(didInfoTap)),
             UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(didTapAdd)),
         ]
         
     }
     
-    @objc private func didInfoTap(){
-        
-    }
-    
+    // function for users to enter and save a password
     @objc private func didTapAdd(){
         let alert = UIAlertController(title: "New item", message: "Enter New Site", preferredStyle: .alert)
         alert.addTextField{
@@ -137,12 +136,14 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         present(sheet, animated: true)
     }
     
+    // function for creating share sheet
     @objc private func shareSheet(siteName: String, pwd: String){
         let shareSheetVC = UIActivityViewController(activityItems: [siteName, pwd], applicationActivities: nil)
         
         present(shareSheetVC, animated: true)
     }
     
+    // variable to hold app passwords
     private var models = [PasswordItem]()
     
     // core data

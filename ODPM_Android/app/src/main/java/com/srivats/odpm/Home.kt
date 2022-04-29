@@ -2,6 +2,8 @@ package com.srivats.odpm
 
 import android.app.Application
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -45,7 +47,6 @@ import com.srivats.odpm.DB.PwdViewModelFactory
     ExperimentalMaterialApi::class)
 @Composable
 fun HomeUi(){
-    val openDialog = remember { mutableStateOf(false) }
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
 
@@ -61,17 +62,6 @@ fun HomeUi(){
         topBar = {
             SmallTopAppBar(
                 title = { Text("ODPM") },
-                actions = {
-                    IconButton(onClick = {
-                        openDialog.value = true
-                    }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Info,
-                            contentDescription = "Info Button",
-                        )
-                    }
-                }
             )
         },
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -81,41 +71,6 @@ fun HomeUi(){
             PwdDisplay(list = items, mPwdViewModel = mPwdViewModel)
         }
     )
-
-    if (openDialog.value) {
-        AlertDialog(
-            onDismissRequest = {
-                // Dismiss the dialog when the user clicks outside the dialog or on the back
-                // button. If you want to disable that functionality, simply use an empty
-                // onDismissRequest.
-                openDialog.value = false
-            },
-            title = {
-                Text(text = "About")
-            },
-            text = {
-                Text(text = "Turned on by default")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        openDialog.value = false
-                    }
-                ) {
-                    Text("Close")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        openDialog.value = false
-                    }
-                ) {
-                    Text("Dismiss")
-                }
-            }
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -128,6 +83,7 @@ fun PwdDisplay(
     val siteName = remember { mutableStateOf("") }
     val sitePwd = remember { mutableStateOf("") }
     val openPwdDialog = remember { mutableStateOf(false) }
+
     LazyColumn() {
         items(list) { pwd ->
             ListItem(
@@ -137,18 +93,21 @@ fun PwdDisplay(
                     sitePwd.value = pwd.sitePwd
                                              },
                 text = { Text(text = pwd.siteName, color = MaterialTheme.colorScheme.onSurface) },
-                icon = {
+                trailing = {
                     IconButton(onClick = {
                         mPwdViewModel.deleteSitePwd(pwd)
                     }) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = Color.Red
                         )
                     }
                 },
             )
-            Divider()
+            Divider(
+                modifier = Modifier.padding(start = 15.dp, end = 15.dp)
+            )
         }
     }
     
@@ -201,6 +160,7 @@ fun PwdDisplay(
 fun BottomSheetContent(scope: CoroutineScope, state: BottomSheetScaffoldState) {
     var siteName by rememberSaveable{ mutableStateOf("") }
     var sitePwd by rememberSaveable{ mutableStateOf("") }
+    val isError = remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val mPwdViewModel: PwdViewModel = viewModel(
@@ -287,10 +247,15 @@ fun BottomSheetContent(scope: CoroutineScope, state: BottomSheetScaffoldState) {
             }
             item {
                 FilledTonalButton(onClick = {
-                    insertSitePwd(siteName = siteName, sitePwd = sitePwd,
-                    mPwdViewModel = mPwdViewModel)
-                    scope.launch {
-                        state.bottomSheetState.collapse()
+                    if(siteName.isEmpty() || sitePwd.isEmpty()){
+                        isError.value = true
+                    }
+                    else{
+                        insertSitePwd(siteName = siteName, sitePwd = sitePwd,
+                            mPwdViewModel = mPwdViewModel)
+                        scope.launch {
+                            state.bottomSheetState.collapse()
+                        }
                     }
                                             },
                     modifier = Modifier
@@ -300,6 +265,28 @@ fun BottomSheetContent(scope: CoroutineScope, state: BottomSheetScaffoldState) {
                 }
             }
         }
+    }
+
+    if(isError.value){
+        AlertDialog(
+            onDismissRequest = {
+                // Dismiss the dialog when the user clicks outside the dialog or on the back
+                // button. If you want to disable that functionality, simply use an empty
+                // onDismissRequest.
+                isError.value = false
+            },
+            title = { Text(text = "Error") },
+            text = { Text(text = "Fields cannot be empty") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        isError.value = false
+                    }
+                ) {
+                    Text("Close")
+                }
+            },
+        )
     }
 }
 
